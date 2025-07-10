@@ -9,7 +9,9 @@ import torch.nn.functional as F
 from mamba import Mamba, MambaConfig
 import os
 import argparse
+import time
 
+start_time = time.time() # Start the timer to measure execution time
 parser = argparse.ArgumentParser()
 parser.add_argument('--use-cuda', default=False,
                     help='CUDA training.')
@@ -27,7 +29,7 @@ parser.add_argument('--layer', type=int, default=2,
 parser.add_argument('--task', type=str, default='SOH',
                     help='RUL or SOH')
 parser.add_argument('--case', type=str, default='A',
-                    help='A or B')                    
+                    help='A,B or C')                    
 
 args = parser.parse_args() # Parse command-line arguments
 # Check if CUDA is available and set the flag accordingly
@@ -109,7 +111,7 @@ if args.case == 'A':
     trainX = np.vstack((xt1,xt2)) # Stack the features vertically
     trainy = np.hstack((yt1,yt2)) # Stack the target variables horizontally
     testX,testy = ReadData(path,'124.csv',args.task) # Read data from the test CSV file
-else:
+if args.case == 'B':
     xt1, yt1 = ReadData(path,'101.csv',args.task)
     xt2, yt2 = ReadData(path,'108.csv',args.task)
     xt3, yt3 = ReadData(path,'120.csv',args.task)
@@ -117,11 +119,23 @@ else:
     trainy = np.hstack((yt1,yt2,yt3))
     testX,testy = ReadData(path,'116.csv',args.task)
 
+if args.case == 'C':
+    xt1, yt1 = ReadData(path,'15.csv',args.task)
+    xt2, yt2 = ReadData(path,'16.csv',args.task)
+    trainX = np.vstack((xt1,xt2))
+    trainy = np.hstack((yt1,yt2))
+    testX,testy = ReadData(path,'17.csv',args.task)
+
 predictions = PredictWithData(trainX, trainy, testX) # Predict the target variable for the test data
 tf = len(testy) # Total number of cycles in the test data
 if args.task == 'RUL': # Normalize the predictions if the task is RUL
     testy = tf*testy 
     predictions = tf*predictions 
+
+end_time = time.time()
+execution_time = end_time - start_time
+
+print(f"Execution time: {execution_time:.4f} seconds")
 
 print('MSE RMSE MAE R2') # Print the evaluation metrics
 evaluation_metric(testy, predictions) # Evaluate the model performance using various metrics
@@ -133,6 +147,8 @@ plt.xlabel('Cycle') # Set the x-axis label
 plt.ylabel(args.task+' value') # Set the y-axis label
 plt.legend() # Add a legend to the plot
 plt.show() # Show the plot with true and predicted values
+
+
 
 # The code reads battery data, trains a neural network model using Mamba, and evaluates its performance on RUL or SOH prediction tasks. It uses PyTorch for model training and evaluation, and Matplotlib for visualization of results.
 # The model is trained using Adam optimizer and L1 loss function, and the results are visualized with plots showing true vs predicted values. The code is modular, allowing for easy adjustments of parameters like learning rate, weight decay, and number of epochs through command-line arguments.
