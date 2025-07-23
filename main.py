@@ -26,9 +26,9 @@ parser.add_argument('--hidden', type=int, default=16,
                     help='Dimension of representations')
 parser.add_argument('--layer', type=int, default=2,
                     help='Num of layers')
-parser.add_argument('--task', type=str, default='SOH',
+parser.add_argument('--task', type=str, default='RUL',
                     help='RUL or SOH')
-parser.add_argument('--case', type=str, default='C',
+parser.add_argument('--case', type=str, default='A',
                     help='A,B or C')                    
 
 args = parser.parse_args() # Parse command-line arguments
