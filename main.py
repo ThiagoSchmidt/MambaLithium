@@ -28,7 +28,7 @@ parser.add_argument('--layer', type=int, default=2,
                     help='Num of layers')
 parser.add_argument('--task', type=str, default='SOH',
                     help='RUL or SOH')
-parser.add_argument('--case', type=str, default='A',
+parser.add_argument('--case', type=str, default='C',
                     help='A,B or C')                    
 
 args = parser.parse_args() # Parse command-line arguments
