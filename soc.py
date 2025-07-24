@@ -9,12 +9,14 @@ import torch.nn.functional as F
 from mamba import Mamba, MambaConfig
 import os
 import argparse
+import time
 
+start_time = time.time() # Start the timer to measure execution time
 parser = argparse.ArgumentParser()
 parser.add_argument('--use-cuda', default=False,
                     help='CUDA training.')
 parser.add_argument('--seed', type=int, default=1, help='Random seed.')
-parser.add_argument('--epochs', type=int, default=100,
+parser.add_argument('--epochs', type=int, default=10,
                     help='Number of epochs to train.')
 parser.add_argument('--lr', type=float, default=0.01,
                     help='Learning rate.')
@@ -109,6 +111,11 @@ trainX = np.vstack((xt1,xt2))
 trainy = np.hstack((yt1,yt2))
 testX,testy = ReadData(path,args.test+'_'+args.temp+'C.csv')
 predictions = PredictWithData(trainX, trainy, testX)
+
+end_time = time.time()
+execution_time = end_time - start_time
+print(f"Execution time: {execution_time:.4f} seconds")
+
 print('MSE RMSE MAE R2')
 evaluation_metric(testy, predictions)
 plt.figure()

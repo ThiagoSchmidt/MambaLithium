@@ -16,7 +16,7 @@ parser = argparse.ArgumentParser()
 parser.add_argument('--use-cuda', default=False,
                     help='CUDA training.')
 parser.add_argument('--seed', type=int, default=1, help='Random seed.')
-parser.add_argument('--epochs', type=int, default=100,
+parser.add_argument('--epochs', type=int, default=10,
                     help='Number of epochs to train.')
 parser.add_argument('--lr', type=float, default=0.01,
                     help='Learning rate.')
