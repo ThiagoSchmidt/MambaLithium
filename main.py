@@ -106,11 +106,11 @@ def ReadData(path,csv,task): # Function to read data from a CSV file and preproc
 
 path = './data/Case'+args.case
 if args.case == 'A':
-    xt1, yt1 = ReadData(path,'91.csv',args.task) # Read data from the first CSV file
-    xt2, yt2 = ReadData(path,'100.csv',args.task) # Read data from the second CSV file
+    xt1, yt1 = ReadData(path,'B0005_discharge.csv',args.task) # Read data from the first CSV file
+    xt2, yt2 = ReadData(path,'B0006_discharge.csv',args.task) # Read data from the second CSV file
     trainX = np.vstack((xt1,xt2)) # Stack the features vertically
     trainy = np.hstack((yt1,yt2)) # Stack the target variables horizontally
-    testX,testy = ReadData(path,'124.csv',args.task) # Read data from the test CSV file
+    testX,testy = ReadData(path,'B0007_discharge.csv',args.task) # Read data from the test CSV file
 if args.case == 'B':
     xt1, yt1 = ReadData(path,'101.csv',args.task)
     xt2, yt2 = ReadData(path,'108.csv',args.task)
