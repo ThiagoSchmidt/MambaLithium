@@ -16,7 +16,7 @@ parser = argparse.ArgumentParser()
 parser.add_argument('--use-cuda', default=False,
                     help='CUDA training.')
 parser.add_argument('--seed', type=int, default=1, help='Random seed.')
-parser.add_argument('--epochs', type=int, default=10,
+parser.add_argument('--epochs', type=int, default=100,
                     help='Number of epochs to train.')
 parser.add_argument('--lr', type=float, default=0.01,
                     help='Learning rate.')
@@ -28,7 +28,7 @@ parser.add_argument('--layer', type=int, default=2,
                     help='Num of layers')
 parser.add_argument('--task', type=str, default='RUL',
                     help='RUL or SOH')
-parser.add_argument('--case', type=str, default='D',
+parser.add_argument('--case', type=str, default='A',
                     help='A,B,C or D')                    
 
 args = parser.parse_args() # Parse command-line arguments
