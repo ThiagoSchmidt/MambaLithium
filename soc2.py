@@ -10,27 +10,27 @@ from mamba import Mamba, MambaConfig
 import os
 import argparse
 import time
-from tabulate import tabulate
 
 start_time = time.time() # Start the timer to measure execution time
 parser = argparse.ArgumentParser()
 parser.add_argument('--use-cuda', default=False,
                     help='CUDA training.')
 parser.add_argument('--seed', type=int, default=1, help='Random seed.')
-parser.add_argument('--epochs', type=int, default=100,
+parser.add_argument('--epochs', type=int, default=500,
                     help='Number of epochs to train.')
 parser.add_argument('--lr', type=float, default=0.01,
                     help='Learning rate.')
 parser.add_argument('--wd', type=float, default=1e-5,
                     help='Weight decay (L2 loss on parameters).')
-parser.add_argument('--hidden', type=int, default=16,
+parser.add_argument('--hidden', type=int, default=64,
                     help='Dimension of representations')
-parser.add_argument('--layer', type=int, default=1,
+parser.add_argument('--layer', type=int, default=2,
                     help='Num of layers')
 parser.add_argument('--test', type=str, default='US06',
                     help='Test set')
 parser.add_argument('--temp', type=str, default='25',
-                    help='Temperature')                    
+                    help='Temperature') 
+parser.add_argument('--window', type=int, default=30, help='Window size for time sequences')                   
 
 args = parser.parse_args()
 args.cuda = args.use_cuda and torch.cuda.is_available()
@@ -51,65 +51,89 @@ def set_seed(seed,cuda):
 set_seed(args.seed,args.cuda)
 
 class Net(nn.Module):
-    def __init__(self,in_dim,out_dim):
+    def __init__(self, in_dim, out_dim):
         super().__init__()
         self.config = MambaConfig(d_model=args.hidden, n_layers=args.layer)
-        self.mamba = nn.Sequential(
-            nn.Linear(in_dim,args.hidden),
-            Mamba(self.config),
-            nn.Linear(args.hidden,out_dim),
-            nn.Sigmoid()
-        )
-    
-    def forward(self,x):
+        
+        # Define layers individually for a more controlled forward pass
+        self.in_linear = nn.Linear(in_dim, args.hidden)
+        self.mamba = Mamba(self.config)
+        self.out_linear = nn.Linear(args.hidden, out_dim)
+        self.sigmoid = nn.Sigmoid()
+
+    def forward(self, x):
+        # Input x is expected to be 3D: (batch, sequence_length, features)
+        
+        # 1. Project input features to the model's hidden dimension
+        # Input: (batch, seq, features) -> Output: (batch, seq, hidden)
+        x = self.in_linear(x)
+
+        # 2. Process the entire sequence through the Mamba model
+        # Input: (batch, seq, hidden) -> Output: (batch, seq, hidden)
         x = self.mamba(x)
-        return x.flatten()
+
+        # 3. For prediction, we only need the output of the last time step
+        # This contains the summarized information of the sequence.
+        # Input: (batch, seq, hidden) -> Output: (batch, hidden)
+        x = x[:, -1, :] 
+
+        # 4. Pass through the final output layer and activation
+        # Input: (batch, hidden) -> Output: (batch, out_dim)
+        out = self.out_linear(x)
+        out = self.sigmoid(out)
+
+        # Flatten for the loss function (L1 loss expects 1D tensors)
+        return out.flatten()
 
 def PredictWithData(trainX, trainy, testX):
-    clf = Net(len(trainX[0]),1)
-    opt = torch.optim.Adam(clf.parameters(),lr=args.lr,weight_decay=args.wd)
-    xt = torch.from_numpy(trainX).float().unsqueeze(0)
-    xv = torch.from_numpy(testX).float().unsqueeze(0)
+    clf = Net(trainX.shape[2], 1)
+    opt = torch.optim.Adam(clf.parameters(), lr=args.lr, weight_decay=args.wd)
+    xt = torch.from_numpy(trainX).float()
+    xv = torch.from_numpy(testX).float()
     yt = torch.from_numpy(trainy).float()
+
     if args.cuda:
         clf = clf.cuda()
-        xt = xt.cuda()
-        xv = xv.cuda()
-        yt = yt.cuda()
-    
+        xt, xv, yt = xt.cuda(), xv.cuda(), yt.cuda()
+
     for e in range(args.epochs):
         clf.train()
-        z = clf(xt)
-        loss = F.l1_loss(z,yt)
+        pred = clf(xt)
+        loss = F.l1_loss(pred, yt)
         opt.zero_grad()
         loss.backward()
         opt.step()
-        if e%10 == 0 and e!=0:
-            print('Epoch %d | Lossp: %.4f' % (e, loss.item()))
+        if e % 10 == 0:
+            print(f"Epoch {e} | Loss: {loss.item():.4f}")
 
     clf.eval()
-    mat = clf(xv)
-    if args.cuda: mat = mat.cpu()
-    yhat = mat.detach().numpy().flatten()
-    return yhat
+    with torch.no_grad():
+        preds = clf(xv).cpu().numpy()
+    return preds
 
-def ReadData(path,csv):
-    f = os.path.join(path,csv)
+def ReadData(path, csv):
+    f = os.path.join(path, csv)
     data = pd.read_csv(f)
-    data['Time'] = data.index
-    y = data['SOC']
-    y = y.values
-    x = data.drop(['SOC','Profile'],axis=1).values
+    y = data['SOC'].values
+    x = data.drop(['SOC', 'Profile'], axis=1).values
     x = scale(x)
-    return x,y
+
+    window = args.window
+    xs, ys = [], []
+
+    for i in range(len(x) - window):
+        xs.append(x[i:i+window])
+        ys.append(y[i+window])  # predict the next SOC
+
+    return np.array(xs), np.array(ys)
 
 path = './data/'+args.temp+'C'
 datal = ['DST','FUDS','US06']
 datal.remove(args.test)
 xt1, yt1 = ReadData(path,datal[0]+'_'+args.temp+'C.csv')
 xt2, yt2 = ReadData(path,datal[1]+'_'+args.temp+'C.csv')
-trainX = np.vstack((xt1,xt2))
-trainy = np.hstack((yt1,yt2))
+trainX = np.concatenate([xt1, xt2], axis=0)
+trainy = np.concatenate([yt1, yt2], axis=0)
 testX,testy = ReadData(path,args.test+'_'+args.temp+'C.csv')
 predictions = PredictWithData(trainX, trainy, testX)
 
@@ -117,25 +141,8 @@ end_time = time.time()
 execution_time = end_time - start_time
 print(f"Execution time: {execution_time:.4f} seconds")
 
-#_----------------------------
-# Test Print Results
-mse = mean_squared_error(testy, predictions) # Calculate Mean Squared Error
-rmse = mse**0.5 # Calculate Root Mean Squared Error
-mae = mean_absolute_error(testy, predictions) # Calculate Mean Absolute Error
-r2 = r2_score(testy, predictions) # Calculate R-squared score
-
-metrics_data = [
-    ["MSE", mse],
-    ["RMSE", rmse],
-    ["MAE", mae],
-    ["R²", r2]
-]
-
-# Use a float format for the second column
-print(tabulate(metrics_data, headers=["Metric", "Value"], tablefmt="grid", floatfmt=".4f"))
-#----------------------------
-
-# Plot the results
+print('MSE RMSE MAE R2')
+evaluation_metric(testy, predictions)
 plt.figure()
 plt.plot(testy, label='True')
 plt.plot(predictions, label='Estimation')

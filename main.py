@@ -10,25 +10,26 @@ from mamba import Mamba, MambaConfig
 import os
 import argparse
 import time
+from tabulate import tabulate
 
 start_time = time.time() # Start the timer to measure execution time
 parser = argparse.ArgumentParser()
 parser.add_argument('--use-cuda', default=False,
                     help='CUDA training.')
 parser.add_argument('--seed', type=int, default=1, help='Random seed.')
-parser.add_argument('--epochs', type=int, default=500,
+parser.add_argument('--epochs', type=int, default=100,
                     help='Number of epochs to train.')
-parser.add_argument('--lr', type=float, default=0.01,
+parser.add_argument('--lr', type=float, default=0.001,
                     help='Learning rate.')
-parser.add_argument('--wd', type=float, default=1e-5,
+parser.add_argument('--wd', type=float, default=1e-4,
                     help='Weight decay (L2 loss on parameters).')
-parser.add_argument('--hidden', type=int, default=64,
+parser.add_argument('--hidden', type=int, default=16,
                     help='Dimension of representations')
-parser.add_argument('--layer', type=int, default=2,
+parser.add_argument('--layer', type=int, default=1,
                     help='Num of layers')
-parser.add_argument('--task', type=str, default='RUL',
+parser.add_argument('--task', type=str, default='SOH',
                     help='RUL or SOH')
-parser.add_argument('--case', type=str, default='D',
+parser.add_argument('--case', type=str, default='A',
                     help='A,B,C or D')                    
 
 args = parser.parse_args() # Parse command-line arguments
@@ -133,18 +134,57 @@ if args.case == 'D':
     trainy = np.hstack((yt1,yt2))
     testX,testy = ReadData(path,'B0007_features_SoH_RUL.csv',args.task)    
 
+if args.case == 'E':
+    xt1, yt1 = ReadData(path,'B0045.csv',args.task)
+    xt2, yt2 = ReadData(path,'B0046.csv',args.task)
+    trainX = np.vstack((xt1,xt2))
+    trainy = np.hstack((yt1,yt2))
+    testX,testy = ReadData(path,'B0047.csv',args.task)     
+
+if args.case == 'F':
+    xt1, yt1 = ReadData(path,'B0045.csv',args.task)
+    xt2, yt2 = ReadData(path,'B0046.csv',args.task)
+    trainX = np.vstack((xt1,xt2))
+    trainy = np.hstack((yt1,yt2))
+    testX,testy = ReadData(path,'B0047.csv',args.task)
+
+if args.case == 'G':
+    xt1, yt1 = ReadData(path,'B0045.csv',args.task)
+    xt2, yt2 = ReadData(path,'B0046.csv',args.task)
+    trainX = np.vstack((xt1,xt2))
+    trainy = np.hstack((yt1,yt2))
+    testX,testy = ReadData(path,'B0047.csv',args.task)   
+
 predictions = PredictWithData(trainX, trainy, testX) # Predict the target variable for the test data
 tf = len(testy) # Total number of cycles in the test data
 if args.task == 'RUL': # Normalize the predictions if the task is RUL
     testy = tf*testy 
     predictions = tf*predictions 
 
+# Measure the execution time of the prediction
 end_time = time.time()
 execution_time = end_time - start_time
-
 print(f"Execution time: {execution_time:.4f} seconds")
 
-print('MSE RMSE MAE R2') # Print the evaluation metrics
+#_----------------------------
+# Test Print Results
+mse = mean_squared_error(testy, predictions) # Calculate Mean Squared Error
+rmse = mse**0.5 # Calculate Root Mean Squared Error
+mae = mean_absolute_error(testy, predictions) # Calculate Mean Absolute Error
+r2 = r2_score(testy, predictions) # Calculate R-squared score
+
+metrics_data = [
+    ["MSE", mse],
+    ["RMSE", rmse],
+    ["MAE", mae],
+    ["R²", r2]
+]
+
+# Use a float format for the second column
+print(tabulate(metrics_data, headers=["Metric", "Value"], tablefmt="grid", floatfmt=".4f"))
+#----------------------------
+
+# Plot the results
 evaluation_metric(testy, predictions) # Evaluate the model performance using various metrics
 plt.figure()
 plt.plot(testy, label='True') # Plot the true values
@@ -154,8 +194,6 @@ plt.xlabel('Cycle') # Set the x-axis label
 plt.ylabel(args.task+' value') # Set the y-axis label
 plt.legend() # Add a legend to the plot
 plt.show() # Show the plot with true and predicted values
-
-
 
 # The code reads battery data, trains a neural network model using Mamba, and evaluates its performance on RUL or SOH prediction tasks. It uses PyTorch for model training and evaluation, and Matplotlib for visualization of results.
 # The model is trained using Adam optimizer and L1 loss function, and the results are visualized with plots showing true vs predicted values. The code is modular, allowing for easy adjustments of parameters like learning rate, weight decay, and number of epochs through command-line arguments.

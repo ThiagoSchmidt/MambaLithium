@@ -1,0 +1,160 @@
+# Add this modification to your existing Mamba training script
+
+import numpy as np
+import pandas as pd
+import matplotlib.pyplot as plt
+from sklearn.metrics import mean_squared_error,mean_absolute_error,r2_score
+from sklearn.preprocessing import scale
+import torch
+import torch.nn as nn
+import torch.nn.functional as F
+from mamba import Mamba, MambaConfig
+import os
+import argparse
+import time
+
+# -------------------------------
+# Add --window argument
+# -------------------------------
+parser = argparse.ArgumentParser()
+parser.add_argument('--use-cuda', default=False)
+parser.add_argument('--seed', type=int, default=1)
+parser.add_argument('--epochs', type=int, default=500)
+parser.add_argument('--lr', type=float, default=0.01)
+parser.add_argument('--wd', type=float, default=1e-5)
+parser.add_argument('--hidden', type=int, default=64)
+parser.add_argument('--layer', type=int, default=2)
+parser.add_argument('--task', type=str, default='RUL')
+parser.add_argument('--case', type=str, default='D')
+parser.add_argument('--window', type=int, default=30, help='Window size for time sequences')
+
+start_time = time.time() # Start the timer to measure execution time
+args = parser.parse_args() # Parse command-line arguments
+# Check if CUDA is available and set the flag accordingly
+args.cuda = args.use_cuda and torch.cuda.is_available() # Function to evaluate the model performance using various metrics
+
+def evaluation_metric(y_test,y_hat): 
+    MSE = mean_squared_error(y_test, y_hat) # Calculate Mean Squared Error
+    RMSE = MSE**0.5 # Calculate Root Mean Squared Error
+    MAE = mean_absolute_error(y_test,y_hat) # Calculate Mean Absolute Error
+    R2 = r2_score(y_test,y_hat) # Calculate R-squared score
+    print('%.4f %.4f %.4f %.4f' % (MSE,RMSE,MAE,R2)) # Print the evaluation metrics
+
+def set_seed(seed,cuda): # Function to set the random seed for reproducibility
+    np.random.seed(seed) # Set the random seed for NumPy
+    torch.manual_seed(seed) # Set the random seed for PyTorch
+    if cuda: # If CUDA is available, set the random seed for CUDA
+        torch.cuda.manual_seed(seed) # Ensure that the results are reproducible by setting the random seed for both NumPy and PyTorch
+
+set_seed(args.seed,args.cuda) #make sure results are reproducible by setting the random seed for both NumPy and PyTorch
+
+# -------------------------------
+# Neural network with windowed input
+# -------------------------------
+class Net(nn.Module):
+    def __init__(self, in_dim, out_dim):
+        super().__init__()
+        self.config = MambaConfig(d_model=args.hidden, n_layers=args.layer)
+        self.mamba = nn.Sequential(
+            nn.Linear(in_dim, args.hidden),
+            Mamba(self.config),
+            nn.Linear(args.hidden, out_dim),
+            nn.Sigmoid()
+        )
+
+    def forward(self, x):
+        if len(x.shape) == 2:
+        # Sem janela (window size = 1), adiciona uma dimensão de tempo
+            x = x.unsqueeze(1)  # [batch_size, 1, features]
+    
+    # Aqui x já está no formato [batch_size, seq_len, features]
+        out = self.mamba(x)  # Mamba espera [batch, seq_len, d_model]
+    
+    # Reduz média sobre a dimensão temporal (se necessário)
+        out = out.mean(dim=1)  # [batch_size, features]
+        return out.flatten()
+
+# -------------------------------
+# Modified ReadData to return sequences
+# -------------------------------
+def ReadData(path, csv, task):
+    df = pd.read_csv(os.path.join(path, csv))
+    tf = len(df)
+    y = df[task].values
+    if task == 'RUL':
+        y = y / tf
+    x = df.drop(['RUL', 'SOH'], axis=1).values
+    x = scale(x)
+    window = args.window
+    xs, ys = [], []
+    for i in range(len(x) - window):
+        xs.append(x[i:i+window])
+        ys.append(y[i+window])
+    return np.array(xs), np.array(ys), tf
+
+
+# -------------------------------
+# Load data (unchanged)
+# -------------------------------
+path = './data/case'+args.case
+
+if args.case == 'D':
+    # Correct usage with 3 outputs
+    xt1, yt1, tf1 = ReadData(path, 'B0005_features_SoH_RUL.csv', args.task)
+    xt2, yt2, tf2 = ReadData(path, 'B0006_features_SoH_RUL.csv', args.task)
+    testX, testy, tf_test = ReadData(path, 'B0007_features_SoH_RUL.csv', args.task)
+
+
+    trainX = np.vstack((xt1, xt2))        # 3D: [samples, window, features]
+    trainy = np.hstack((yt1, yt2))        # 1D: [samples]
+
+
+# -------------------------------
+# Train & Predict
+# -------------------------------
+def PredictWithData(trainX, trainy, testX):
+    clf = Net(trainX.shape[2], 1)
+    opt = torch.optim.Adam(clf.parameters(), lr=args.lr, weight_decay=args.wd)
+    xt = torch.from_numpy(trainX).float()
+    xv = torch.from_numpy(testX).float()
+    yt = torch.from_numpy(trainy).float()
+    if args.cuda:
+        clf = clf.cuda()
+        xt = xt.cuda()
+        xv = xv.cuda()
+        yt = yt.cuda()
+    for e in range(args.epochs):
+        clf.train()
+        pred = clf(xt)
+        loss = F.l1_loss(pred, yt)
+        opt.zero_grad()
+        loss.backward()
+        opt.step()
+        if e % 10 == 0 and e != 0:
+            print(f"Epoch {e}, Loss: {loss.item():.4f}")
+    clf.eval()
+    with torch.no_grad():
+        out = clf(xv).cpu().numpy()
+    return out
+
+predictions = PredictWithData(trainX, trainy, testX)
+if args.task == 'RUL':
+    tf = len(testy) + args.window  # Add back window to full cycle count
+    testy = tf * testy
+    predictions = tf * predictions
+
+end_time = time.time()
+execution_time = end_time - start_time
+
+print(f"Execution time: {execution_time:.4f} seconds")
+
+print('MSE RMSE MAE R2') # Print the evaluation metrics
+evaluation_metric(testy, predictions) # Evaluate the model performance using various metrics
+plt.figure()
+plt.plot(testy, label='True') # Plot the true values
+plt.plot(predictions, label='Estimation') # Plot the predicted values
+plt.title(args.task+' Estimation') # Set the title of the plot
+plt.xlabel('Cycle') # Set the x-axis label
+plt.ylabel(args.task+' value') # Set the y-axis label
+plt.legend() # Add a legend to the plot
+plt.show() # Show the plot with true and predicted values
