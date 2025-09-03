@@ -27,7 +27,7 @@ parser.add_argument('--hidden', type=int, default=16,
                     help='Dimension of representations')
 parser.add_argument('--layer', type=int, default=1,
                     help='Num of layers')
-parser.add_argument('--test', type=str, default='US06',
+parser.add_argument('--test', type=str, default='DST',
                     help='Test set')
 parser.add_argument('--temp', type=str, default='25',
                     help='Temperature')                    
