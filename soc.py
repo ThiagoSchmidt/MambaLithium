@@ -93,24 +93,26 @@ def PredictWithData(trainX, trainy, testX):
     yhat = mat.detach().numpy().flatten()
     return yhat
 
-def ReadData(path,csv):
-    f = os.path.join(path,csv)
+# DATA
+# ============================
+def ReadData(path, csv, task):
+    f = os.path.join(path, csv)
     data = pd.read_csv(f)
-    data['Time'] = data.index
-    y = data['SOC']
-    y = y.values
-    x = data.drop(['SOC','Profile'],axis=1).values
+    y = data[task].values
+    x = data.drop(['RUL','SOH','SOC'], axis=1).values  # Drop SOC/SOH/RUL features
     x = scale(x)
-    return x,y
+    return x, y
 
-path = './data/'+args.temp+'C'
-datal = ['DST','FUDS','US06']
-datal.remove(args.test)
-xt1, yt1 = ReadData(path,datal[0]+'_'+args.temp+'C.csv')
-xt2, yt2 = ReadData(path,datal[1]+'_'+args.temp+'C.csv')
-trainX = np.vstack((xt1,xt2))
-trainy = np.hstack((yt1,yt2))
-testX,testy = ReadData(path,args.test+'_'+args.temp+'C.csv')
+# ============================
+# CASE G DATA (SOC)
+# ============================
+path = './data/case'+args.case
+if args.case == 'G':
+    xt1, yt1 = ReadData(path,'battery5_with_SOC_SOH_RUL.csv',args.task)
+    xt2, yt2 = ReadData(path,'battery6_with_SOC_SOH_RUL.csv',args.task)
+    trainX = np.vstack((xt1,xt2))
+    trainy = np.hstack((yt1,yt2))
+    testX,testy = ReadData(path,'battery7_with_SOC_SOH_RUL.csv',args.task)
 predictions = PredictWithData(trainX, trainy, testX)
 
 end_time = time.time()

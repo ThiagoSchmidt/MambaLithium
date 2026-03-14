@@ -1,0 +1,171 @@
+Mamba + Optuna Results
+
+SOC
+Best Hyperparameters:
+lr: 0.001111258372884126
+wd: 9.149609543225845e-06
+hidden_dim: 110
+num_layers: 2
+epochs: 77
+Epoch 10 | Loss: 0.0713
+Epoch 20 | Loss: 0.0318
+Epoch 30 | Loss: 0.0161
+Epoch 40 | Loss: 0.0104
+Epoch 50 | Loss: 0.0080
+Epoch 60 | Loss: 0.0059
+Epoch 70 | Loss: 0.0053
+
+Model Evaluation Metrics:
++--------------------+----------+
+| Metric             |    Value |
++====================+==========+
+| MSE                |   0.0002 |
++--------------------+----------+
+| RMSE               |   0.0140 |
++--------------------+----------+
+| MAE                |   0.0105 |
++--------------------+----------+
+| R²                 |   0.9977 |
++--------------------+----------+
+| Execution time (s) | 266.6669 |
++--------------------+----------+
+
+RUL
+Best hyperparameters found:
+{'lr': 0.0014199282187422535, 'wd': 7.436911119117763e-06, 'hidden': 8, 'layers': 1}
+
+Final ensemble model trained with Optuna hyperparameters:
++----------+---------+
+| Metric   |   Value |
++==========+=========+
+| MSE      |  0.0000 |
++----------+---------+
+| RMSE     |  0.0014 |
++----------+---------+
+| MAE      |  0.0011 |
++----------+---------+
+| R²       |  0.8241 |
++----------+---------+
+Optimal smoothing weight: 0.1
+Execution time: 226.45 s
+
+SOH 
+Best hyperparameters found:
+{'lr': 0.006808782173099326, 'wd': 0.0002493915943206098, 'hidden': 8, 'layers': 1}
+
+Final ensemble model trained with Optuna hyperparameters:
++----------+---------+
+| Metric   |   Value |
++==========+=========+
+| MSE      |  0.0009 |
++----------+---------+
+| RMSE     |  0.0305 |
++----------+---------+
+| MAE      |  0.0274 |
++----------+---------+
+| R²       |  0.8578 |
++----------+---------+
+Optimal smoothing weight: 0.1
+Execution time: 215.12 s
+
+LSTM+Optuna 
+
+LSTM RUL
+Best hyperparameters: {'hidden_size': 96, 'num_layers': 3, 'lr': 0.000845831931811952, 'window_size': 13, 'batch_size': 128}
+Best R²: 1.0000
+Epoch [1/50] - Loss: 3.7636
+Epoch [20/50] - Loss: 0.0095
+Epoch [40/50] - Loss: 0.0053
+Training finished in 72.62s
+
+===== Final Results =====
+Best Hyperparameters found by Optuna:
+  hidden_size: 96
+  num_layers: 3
+  lr: 0.000845831931811952
+  window_size: 13
+  batch_size: 128
+
+Evaluation Metrics on Test Set:
+  R² : 1.0000
+  MSE: 1.3462
+  MAE: 0.6766
+
+R² Comparison:
+  Train R²: 0.9999
+  Test  R²: 1.0000
+
+LSTM SOH
+
+Best hyperparameters: {'hidden_size': 48, 'num_layers': 2, 'lr': 0.0014573201478442857, 'window_size': 16, 'batch_size': 128}
+Best R²: 1.0000
+Epoch [1/50] - Loss: 3.8858
+Epoch [20/50] - Loss: 0.0082
+Epoch [40/50] - Loss: 0.0054
+Training finished in 64.03s
+
+===== Final Results =====
+Best Hyperparameters found by Optuna:
+  hidden_size: 48
+  num_layers: 2
+  lr: 0.0014573201478442857
+  window_size: 16
+  batch_size: 128
+
+Evaluation Metrics on Test Set:
+  R² : 0.9998
+  MSE: 5.4097
+  MAE: 1.9405
+
+R² Comparison:
+  Train R²: 0.9999
+  Test  R²: 0.9998
+
+LSTM SOC
+
+Best hyperparameters: {'hidden_size': 32, 'num_layers': 2, 'lr': 0.00034391726381872404, 'window_size': 17, 'batch_size': 256}
+Best R²: 0.9631
+Epoch [1/50] - Loss: 21.3424
+Epoch [20/50] - Loss: 0.8880
+Epoch [40/50] - Loss: 0.8653
+Training finished in 38.62s
+
+===== Final Results =====
+Best Hyperparameters found by Optuna:
+  hidden_size: 32
+  num_layers: 2
+  lr: 0.00034391726381872404
+  window_size: 17
+  batch_size: 256
+
+Evaluation Metrics on Test Set:
+  R² : 0.9605
+  MSE: 0.0036
+  MAE: 0.0142
+
+R² Comparison:
+  Train R²: 0.9720
+  Test  R²: 0.9605
+
+  \begin{table}[htbp]
+\caption{Comparison of Evaluation Metrics Between LSTM and Mamba Models}
+\centering
+\begin{tabular}{llcccc}
+\toprule
+\textbf{Task} & \textbf{Model} & \textbf{MSE} & \textbf{RMSE} & \textbf{MAE} & \textbf{R$^2$} \\
+\midrule
+\multirow{2}{*}{SoH} 
+    & LSTM  & 0.0234 & 0.1531 & 0.0810 & 0.1243 \\
+    & Mamba & 0.0104 & 0.1018 & 0.0898 & 0.6235 \\
+\midrule
+\multirow{2}{*}{SoC} 
+    & LSTM  & 0.0000 & 0.0030 & 0.0028 & 0.9999 \\
+    & Mamba & 0.0001 & 0.0105 & 0.0086 & 0.9986 \\
+\midrule
+\multirow{2}{*}{RUL} 
+    & LSTM  & 284.6630 & 16.8720 & 15.5146 & 0.8927 \\
+    & Mamba & 2570.0098 & 50.6953 & 38.2361 & 0.0591 \\
+\bottomrule
+\end{tabular}
+\label{tab:table_comparison}
+\end{table}
