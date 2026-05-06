@@ -14,23 +14,15 @@ from tabulate import tabulate
 
 start_time = time.time() # Start the timer to measure execution time
 parser = argparse.ArgumentParser()
-parser.add_argument('--use-cuda', default=False,
-                    help='CUDA training.')
+parser.add_argument('--use-cuda', default=False,help='CUDA training.')
 parser.add_argument('--seed', type=int, default=1, help='Random seed.')
-parser.add_argument('--epochs', type=int, default=100,
-                    help='Number of epochs to train.')
-parser.add_argument('--lr', type=float, default=0.01,
-                    help='Learning rate.')
-parser.add_argument('--wd', type=float, default=1e-5,
-                    help='Weight decay (L2 loss on parameters).')
-parser.add_argument('--hidden', type=int, default=16,
-                    help='Dimension of representations')
-parser.add_argument('--layer', type=int, default=1,
-                    help='Num of layers')
-parser.add_argument('--test', type=str, default='DST',
-                    help='Test set')
-parser.add_argument('--temp', type=str, default='25',
-                    help='Temperature')                    
+parser.add_argument('--epochs', type=int, default=10,help='Number of epochs to train.')
+parser.add_argument('--lr', type=float, default=0.01,help='Learning rate.')
+parser.add_argument('--wd', type=float, default=1e-5,help='Weight decay (L2 loss on parameters).')
+parser.add_argument('--hidden', type=int, default=8,help='Dimension of representations')
+parser.add_argument('--layer', type=int, default=1,help='Num of layers')
+parser.add_argument('--task', type=str, default='SOC', help='RUL or SOH')
+                    
 
 args = parser.parse_args()
 args.cuda = args.use_cuda and torch.cuda.is_available()
@@ -106,13 +98,13 @@ def ReadData(path, csv, task):
 # ============================
 # CASE G DATA (SOC)
 # ============================
-path = './data/case'+args.case
-if args.case == 'G':
-    xt1, yt1 = ReadData(path,'battery5_with_SOC_SOH_RUL.csv',args.task)
-    xt2, yt2 = ReadData(path,'battery6_with_SOC_SOH_RUL.csv',args.task)
-    trainX = np.vstack((xt1,xt2))
-    trainy = np.hstack((yt1,yt2))
-    testX,testy = ReadData(path,'battery7_with_SOC_SOH_RUL.csv',args.task)
+path = './data'
+xt1, yt1 = ReadData(path,'battery5_with_SOC_SOH_RUL.csv',args.task)
+xt2, yt2 = ReadData(path,'battery6_with_SOC_SOH_RUL.csv',args.task)
+trainX = np.vstack((xt1,xt2))
+trainy = np.hstack((yt1,yt2))
+testX,testy = ReadData(path,'battery7_with_SOC_SOH_RUL.csv',args.task)
+
 predictions = PredictWithData(trainX, trainy, testX)
 
 end_time = time.time()

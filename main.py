@@ -14,10 +14,10 @@ from tabulate import tabulate
 
 start_time = time.time() # Start the timer to measure execution time
 parser = argparse.ArgumentParser()
-parser.add_argument('--use-cuda', default=True,help='CUDA training.')
+parser.add_argument('--use-cuda', default=False,help='CUDA training.')
 parser.add_argument('--seed', type=int, default=1, help='Random seed.') 
 #Seed:Ensures our results are reproducible. It's the starting point for all random processes, guaranteeing that anyone running the code gets the same outcome.
-parser.add_argument('--epochs', type=int, default=50, help='Number of epochs to train.')
+parser.add_argument('--epochs', type=int, default=10, help='Number of epochs to train.')
 #Epochs: The number of times the model trains on the entire dataset. This determines how much practice the model gets at making predictions.
 parser.add_argument('--lr', type=float, default=1.42e-3,help='Learning rate.')
 #Learning Rate: Controls the speed of learning. It dictates how much the model adjusts its internal logic based on the errors it makes during training.
