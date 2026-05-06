@@ -17,18 +17,18 @@ parser = argparse.ArgumentParser()
 parser.add_argument('--use-cuda', default=False,help='CUDA training.')
 parser.add_argument('--seed', type=int, default=1, help='Random seed.') 
 #Seed:Ensures our results are reproducible. It's the starting point for all random processes, guaranteeing that anyone running the code gets the same outcome.
-parser.add_argument('--epochs', type=int, default=10, help='Number of epochs to train.')
+parser.add_argument('--epochs', type=int, default=50, help='Number of epochs to train.')
 #Epochs: The number of times the model trains on the entire dataset. This determines how much practice the model gets at making predictions.
-parser.add_argument('--lr', type=float, default=1.42e-3,help='Learning rate.')
+parser.add_argument('--lr', type=float, default=0.0003377670776553457,help='Learning rate.')
 #Learning Rate: Controls the speed of learning. It dictates how much the model adjusts its internal logic based on the errors it makes during training.
-parser.add_argument('--wd', type=float, default=7.4e-06,help='Weight decay (L2 loss on parameters).')
+parser.add_argument('--wd', type=float, default=1.0730952088244766e-06,help='Weight decay (L2 loss on parameters).')
 #Weight Decay: A technique to prevent overfitting. It encourages the model to learn simpler, more general patterns rather than just memorizing the training data.
-parser.add_argument('--hidden', type=int, default=8,help='Dimension of representations')
+parser.add_argument('--hidden', type=int, default=32,help='Dimension of representations')
 #Hidden Layers: This is the size of the model's memory. A larger hidden layer size means the model can remember more complex information at each time step.
-parser.add_argument('--layer', type=int, default=1,help='Num of layers')
+parser.add_argument('--layer', type=int, default=3,help='Num of layers')
 #A single layer might learn simple patterns, while multiple layers can learn more abstract and complex features from the data.
 parser.add_argument('--task', type=str, default='SOH',help='RUL or SOH')
-parser.add_argument('--case', type=str, default='D',help='A,B,C or D')                    
+parser.add_argument('--case', type=str, default='G',help='A,B,C or D')                    
 
 args = parser.parse_args() # Parse command-line arguments
 # Check if CUDA is available and set the flag accordingly
@@ -147,11 +147,12 @@ if args.case == 'F':
     testX,testy = ReadData(path,'1242.csv',args.task)
 
 if args.case == 'G':
-    xt1, yt1 = ReadData(path,'battery5_with_SOC_SOH_RUL.csv',args.task)
-    xt2, yt2 = ReadData(path,'battery6_with_SOC_SOH_RUL.csv',args.task)
-    trainX = np.vstack((xt1,xt2))
-    trainy = np.hstack((yt1,yt2))
-    testX,testy = ReadData(path,'battery7_with_SOC_SOH_RUL.csv',args.task)   
+    xt1, yt1 = ReadData(path,'discharge_battery_5_with_SOC_SOH_RUL.csv', args.task)
+    xt2, yt2 = ReadData(path,'discharge_battery_6_with_SOC_SOH_RUL.csv', args.task)
+    xt3, yt3 = ReadData(path,'discharge_battery_7_with_SOC_SOH_RUL.csv', args.task)
+    trainX = np.vstack((xt1, xt2, xt3))
+    trainy = np.hstack((yt1, yt2, yt3))
+    testX, testy = ReadData(path, 'discharge_battery_18_with_SOC_SOH_RUL.csv', args.task)  
 
 predictions = PredictWithData(trainX, trainy, testX) # Predict the target variable for the test data
 tf = len(testy) # Total number of cycles in the test data

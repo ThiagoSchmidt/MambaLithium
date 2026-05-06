@@ -21,10 +21,10 @@ parser = argparse.ArgumentParser()
 parser.add_argument('--use-cuda', default=True)
 parser.add_argument('--seed', type=int, default=1)
 parser.add_argument('--epochs', type=int, default=50)
-parser.add_argument('--patience', type=int, default=25)
-parser.add_argument('--task', type=str, default='RUL')  # or 'SOH'
-parser.add_argument('--case', type=str, default='E')
-parser.add_argument('--trials', type=int, default=15)
+parser.add_argument('--patience', type=int, default=15)
+parser.add_argument('--task', type=str, default='RUL')
+parser.add_argument('--case', type=str, default='A')
+parser.add_argument('--trials', type=int, default=30)
 args = parser.parse_args()
 
 # ============================
@@ -45,7 +45,7 @@ set_seed(args.seed, args.cuda)
 # ============================
 def evaluation_metric(y_test, y_hat):
     mse = mean_squared_error(y_test, y_hat)
-    rmse = mse**0.5
+    rmse = np.sqrt(mse)
     mae = mean_absolute_error(y_test, y_hat)
     r2 = r2_score(y_test, y_hat)
     return mse, rmse, mae, r2
@@ -85,39 +85,37 @@ def ReadData(path, csv, task):
 # CASE G DATA
 # ============================
 path = './data/case'+args.case
-if args.case == 'D':
-    xt1, yt1 = ReadData(path,'B0005_features_SoH_RUL.csv',args.task)
-    xt2, yt2 = ReadData(path,'B0006_features_SoH_RUL.csv',args.task)
-    trainX = np.vstack((xt1,xt2))
-    trainy = np.hstack((yt1,yt2))
-    testX,testy = ReadData(path,'B0007_features_SoH_RUL.csv',args.task)  
-if args.case == 'E':
-    xt1, yt1 = ReadData(path,'battery5_with_SOC_SOH_RUL.csv',args.task)
-    xt2, yt2 = ReadData(path,'battery6_with_SOC_SOH_RUL.csv',args.task)
-    xt3, yt3 = ReadData(path,'battery7_with_SOC_SOH_RUL.csv',args.task)
-    xt4, yt4 = ReadData(path,'battery18_with_SOC_SOH_RUL.csv',args.task)
-    xt5, yt5 = ReadData(path,'battery25_with_SOC_SOH_RUL.csv',args.task)
-    xt6, yt6 = ReadData(path,'battery26_with_SOC_SOH_RUL.csv',args.task)
-    xt7, yt7 = ReadData(path,'battery27_with_SOC_SOH_RUL.csv',args.task)
-    xt8, yt8 = ReadData(path,'battery28_with_SOC_SOH_RUL.csv',args.task)
-    xt9, yt9 = ReadData(path,'battery29_with_SOC_SOH_RUL.csv',args.task)
-    xt10, yt10 = ReadData(path,'battery30_with_SOC_SOH_RUL.csv',args.task)
-    xt11, yt11 = ReadData(path,'battery31_with_SOC_SOH_RUL.csv',args.task)
-    xt12, yt12 = ReadData(path,'battery32_with_SOC_SOH_RUL.csv',args.task)
-    xt13, yt13 = ReadData(path,'battery33_with_SOC_SOH_RUL.csv',args.task)
-    xt14, yt14 = ReadData(path,'battery34_with_SOC_SOH_RUL.csv',args.task)
-    xt15, yt15 = ReadData(path,'battery36_with_SOC_SOH_RUL.csv',args.task)
-    xt16, yt16 = ReadData(path,'battery38_with_SOC_SOH_RUL.csv',args.task)
-    trainX = np.vstack((xt1,xt2,xt3,xt4,xt5,xt6,xt7,xt8,xt9,xt10,xt11,xt12,xt13,xt14,xt15,xt16))
-    trainy = np.hstack((yt1,yt2,yt3,yt4,yt5,yt6,yt7,yt8,yt9,yt10,yt11,yt12,yt13,yt14,yt15,yt16))
-    testX,testy = ReadData(path,'battery40_with_SOC_SOH_RUL.csv',args.task) 
-if args.case == 'G':
-    xt1, yt1 = ReadData(path,'battery5_with_SOC_SOH_RUL.csv',args.task)
-    xt2, yt2 = ReadData(path,'battery6_with_SOC_SOH_RUL.csv',args.task)
-    trainX = np.vstack((xt1,xt2))
-    trainy = np.hstack((yt1,yt2))
-    testX,testy = ReadData(path,'battery7_with_SOC_SOH_RUL.csv',args.task)  
+if args.case == 'A':
+    xt1, yt1 = ReadData(path,'discharge_battery_5_with_SOC_SOH_RUL.csv', args.task)
+    xt2, yt2 = ReadData(path,'discharge_battery_6_with_SOC_SOH_RUL.csv', args.task)
+    xt3, yt3 = ReadData(path,'discharge_battery_7_with_SOC_SOH_RUL.csv', args.task)
+    xt4, yt4 = ReadData(path,'discharge_battery_25_with_SOC_SOH_RUL.csv', args.task)
+    xt5, yt5 = ReadData(path,'discharge_battery_26_with_SOC_SOH_RUL.csv', args.task)
+    xt6, yt6 = ReadData(path,'discharge_battery_27_with_SOC_SOH_RUL.csv', args.task)
+    xt7, yt7 = ReadData(path,'discharge_battery_28_with_SOC_SOH_RUL.csv', args.task)
+    xt8, yt8 = ReadData(path,'discharge_battery_29_with_SOC_SOH_RUL.csv', args.task)
+    xt9, yt9 = ReadData(path,'discharge_battery_30_with_SOC_SOH_RUL.csv', args.task)
+    xt10, yt10 = ReadData(path,'discharge_battery_31_with_SOC_SOH_RUL.csv', args.task)
+    xt11, yt11 = ReadData(path,'discharge_battery_32_with_SOC_SOH_RUL.csv', args.task)
+    xt12, yt12 = ReadData(path,'discharge_battery_42_with_SOC_SOH_RUL.csv', args.task)
+    xt13, yt13 = ReadData(path,'discharge_battery_43_with_SOC_SOH_RUL.csv', args.task)
+    xt14, yt14 = ReadData(path,'discharge_battery_44_with_SOC_SOH_RUL.csv', args.task)
+    xt15, yt15 = ReadData(path,'discharge_battery_45_with_SOC_SOH_RUL.csv', args.task)
+    xt16, yt16 = ReadData(path,'discharge_battery_46_with_SOC_SOH_RUL.csv', args.task)
+    xt17, yt17 = ReadData(path,'discharge_battery_47_with_SOC_SOH_RUL.csv', args.task)
+    xt18, yt18 = ReadData(path,'discharge_battery_48_with_SOC_SOH_RUL.csv', args.task)
+    xt19, yt19 = ReadData(path,'discharge_battery_53_with_SOC_SOH_RUL.csv', args.task)
+    trainX = np.vstack((xt1, xt2, xt3, xt4, xt5, xt6, xt7, xt8, xt9, xt10, xt11, xt12, xt13, xt14, xt15, xt16, xt17, xt18, xt19))
+    trainy = np.hstack((yt1, yt2, yt3, yt4, yt5, yt6, yt7, yt8, yt9, yt10, yt11, yt12, yt13, yt14, yt15, yt16, yt17, yt18, yt19))
+    testX, testy = ReadData(path, 'discharge_battery_18_with_SOC_SOH_RUL.csv', args.task) 
 
+if args.case == 'G':
+    xt1, yt1 = ReadData(path,'discharge_battery_5_with_SOC_SOH_RUL.csv', args.task)
+    xt2, yt2 = ReadData(path,'discharge_battery_6_with_SOC_SOH_RUL.csv', args.task)
+    #xt3, yt3 = ReadData(path,'discharge_battery_7_with_SOC_SOH_RUL.csv', args.task)
+    trainX = np.vstack((xt1, xt2))
+    trainy = np.hstack((yt1, yt2))
+    testX, testy = ReadData(path, 'discharge_battery_7_with_SOC_SOH_RUL.csv', args.task)  
 # ============================
 # TRAIN FUNCTION
 # ============================
@@ -247,8 +245,8 @@ print(f"Execution time: {end_time - start_time:.2f} s")
 # ============================
 plt.figure(figsize=(12,5))
 plt.plot(testy, label='True')
-plt.plot(predictions, label='Smoothed Ensemble')
-plt.title(f'{args.task} Estimation with Optuna + Ensemble')
+plt.plot(predictions, label='Predicted')
+plt.title(f'{args.task} Estimation with Optuna')
 plt.xlabel('Cycle')
 plt.ylabel(f'{args.task} value')
 plt.legend()

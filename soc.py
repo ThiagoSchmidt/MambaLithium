@@ -16,11 +16,11 @@ start_time = time.time() # Start the timer to measure execution time
 parser = argparse.ArgumentParser()
 parser.add_argument('--use-cuda', default=False,help='CUDA training.')
 parser.add_argument('--seed', type=int, default=1, help='Random seed.')
-parser.add_argument('--epochs', type=int, default=10,help='Number of epochs to train.')
-parser.add_argument('--lr', type=float, default=0.01,help='Learning rate.')
-parser.add_argument('--wd', type=float, default=1e-5,help='Weight decay (L2 loss on parameters).')
-parser.add_argument('--hidden', type=int, default=8,help='Dimension of representations')
-parser.add_argument('--layer', type=int, default=1,help='Num of layers')
+parser.add_argument('--epochs', type=int, default=50,help='Number of epochs to train.')
+parser.add_argument('--lr', type=float, default= 0.004160609108385165,help='Learning rate.')
+parser.add_argument('--wd', type=float, default= 1.8192271955511416e-05,help='Weight decay (L2 loss on parameters).')
+parser.add_argument('--hidden', type=int, default= 64,help='Dimension of representations')
+parser.add_argument('--layer', type=int, default= 2,help='Num of layers')
 parser.add_argument('--task', type=str, default='SOC', help='RUL or SOH')
                     
 
@@ -98,12 +98,13 @@ def ReadData(path, csv, task):
 # ============================
 # CASE G DATA (SOC)
 # ============================
-path = './data'
-xt1, yt1 = ReadData(path,'battery5_with_SOC_SOH_RUL.csv',args.task)
-xt2, yt2 = ReadData(path,'battery6_with_SOC_SOH_RUL.csv',args.task)
-trainX = np.vstack((xt1,xt2))
-trainy = np.hstack((yt1,yt2))
-testX,testy = ReadData(path,'battery7_with_SOC_SOH_RUL.csv',args.task)
+path = './MambaLithium/data/caseG'
+xt1, yt1 = ReadData(path,'discharge_battery_5_with_SOC_SOH_RUL.csv', args.task)
+xt2, yt2 = ReadData(path,'discharge_battery_6_with_SOC_SOH_RUL.csv', args.task)
+xt3, yt3 = ReadData(path,'discharge_battery_7_with_SOC_SOH_RUL.csv', args.task)
+trainX = np.vstack((xt1, xt2, xt3))
+trainy = np.hstack((yt1, yt2, yt3))
+testX, testy = ReadData(path, 'discharge_battery_18_with_SOC_SOH_RUL.csv', args.task)
 
 predictions = PredictWithData(trainX, trainy, testX)
 

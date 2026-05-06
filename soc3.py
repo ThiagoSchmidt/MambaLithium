@@ -20,11 +20,11 @@ from tabulate import tabulate
 parser = argparse.ArgumentParser()
 parser.add_argument('--use-cuda', default=True)
 parser.add_argument('--seed', type=int, default=1)
-parser.add_argument('--epochs', type=int, default=60)
-parser.add_argument('--patience', type=int, default=25)
+parser.add_argument('--epochs', type=int, default=50)
+parser.add_argument('--patience', type=int, default=15)
 parser.add_argument('--task', type=str, default='SOC')  # <- Change default to 'SOC'
 parser.add_argument('--case', type=str, default='G')
-parser.add_argument('--trials', type=int, default=50)
+parser.add_argument('--trials', type=int, default=30)
 args = parser.parse_args()
 
 # ============================
@@ -82,13 +82,14 @@ def ReadData(path, csv, task):
 # ============================
 # CASE G DATA (SOC)
 # ============================
-path = './data/case'+args.case
+path = './MambaLithium/data/case'+args.case
 if args.case == 'G':
-    xt1, yt1 = ReadData(path,'battery5_with_SOC_SOH_RUL.csv',args.task)
-    xt2, yt2 = ReadData(path,'battery6_with_SOC_SOH_RUL.csv',args.task)
-    trainX = np.vstack((xt1,xt2))
-    trainy = np.hstack((yt1,yt2))
-    testX,testy = ReadData(path,'battery7_with_SOC_SOH_RUL.csv',args.task)
+    xt1, yt1 = ReadData(path,'discharge_battery_5_with_SOC_SOH_RUL.csv', args.task)
+    xt2, yt2 = ReadData(path,'discharge_battery_6_with_SOC_SOH_RUL.csv', args.task)
+    xt3, yt3 = ReadData(path,'discharge_battery_7_with_SOC_SOH_RUL.csv', args.task)
+    trainX = np.vstack((xt1, xt2, xt3))
+    trainy = np.hstack((yt1, yt2, yt3))
+    testX, testy = ReadData(path, 'discharge_battery_18_with_SOC_SOH_RUL.csv', args.task)  
 
 # ============================
 # TRAIN FUNCTION
@@ -219,8 +220,8 @@ print(f"Execution time: {end_time - start_time:.2f} s")
 # ============================
 plt.figure(figsize=(12,5))
 plt.plot(testy, label='True SOC')
-plt.plot(predictions, label='Smoothed Ensemble SOC')
-plt.title(f'SOC Estimation with Optuna + Ensemble')
+plt.plot(predictions, label='SOC')
+plt.title(f'SOC Estimation with Optuna')
 plt.xlabel('Cycle')
 plt.ylabel('SOC')
 plt.legend()
